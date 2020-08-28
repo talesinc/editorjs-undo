@@ -34,7 +34,6 @@ export default class Observer {
     };
 
     const target = this.holder;
-
     this.observer = new MutationObserver((mutationList) => {
       this.mutationHandler(mutationList);
     });
