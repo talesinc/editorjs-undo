@@ -1,4 +1,4 @@
-import Observer from './observer';
+import Observer from './observer'
 
 /**
  * Undo/Redo feature for Editor.js.
@@ -15,29 +15,31 @@ export default class Undo {
   /**
    * @param options — Plugin custom options.
    */
-  constructor({ editor, onUpdate, maxLength }) {
+  constructor ({ editor, onUpdate, maxLength }) {
     const defaultOptions = {
       maxLength: 30,
-      onUpdate() {},
-    };
+      onUpdate () {
+        //
+      }
+    }
 
-    const { configuration } = editor;
+    const { configuration } = editor
 
-    this.editor = editor;
-    this.shouldSaveHistory = true;
-    this.readOnly = configuration.readOnly;
-    this.maxLength = maxLength || defaultOptions.maxLength;
-    this.onUpdate = onUpdate || defaultOptions.onUpdate;
+    this.editor = editor
+    this.shouldSaveHistory = true
+    this.readOnly = configuration.readOnly
+    this.maxLength = maxLength || defaultOptions.maxLength
+    this.onUpdate = onUpdate || defaultOptions.onUpdate
 
     const observer = new Observer(
       () => this.registerChange(),
-      configuration.holder,
-    );
-    observer.setMutationObserver();
+      configuration.holder
+    )
+    observer.setMutationObserver()
 
-    this.setEventListeners();
-    this.initialItem = null;
-    this.clear();
+    this.setEventListeners()
+    this.initialItem = null
+    this.clear()
   }
 
   /**
@@ -45,8 +47,8 @@ export default class Undo {
    *
    * @returns {boolean}
    */
-  static get isReadOnlySupported() {
-    return true;
+  static get isReadOnlySupported () {
+    return true
   }
 
   /**
@@ -55,9 +57,9 @@ export default class Undo {
    * @param {Object} stack  Changes history stack.
    * @param {Number} stack  Limit of changes recorded by the history stack.
    */
-  truncate(stack, limit) {
+  truncate (stack, limit) {
     while (stack.length > limit) {
-      stack.shift();
+      stack.shift()
     }
   }
 
@@ -66,36 +68,38 @@ export default class Undo {
    *
    * @param {Object} initialItem  Initial data provided by the user.
    */
-  initialize(initialItem) {
-    const initialData = 'blocks' in initialItem ? initialItem.blocks : initialItem;
-    const initialIndex = initialData.length - 1;
-    const firstElement = { index: initialIndex, state: initialData };
-    this.stack[0] = firstElement;
-    this.initialItem = firstElement;
+  initialize (initialItem) {
+    const initialData =
+      'blocks' in initialItem ? initialItem.blocks : initialItem
+    const initialIndex = initialData.length - 1
+    const firstElement = { index: initialIndex, state: initialData }
+    this.stack[0] = firstElement
+    this.initialItem = firstElement
   }
 
   /**
    * Clears the history stack.
    */
-  clear() {
+  clear () {
     this.stack = this.initialItem
       ? [this.initialItem]
-      : [{ index: 0, state: [] }];
-    this.position = 0;
-    this.onUpdate();
+      : [{ index: 0, state: [] }]
+    this.position = 0
+    this.onUpdate()
   }
 
   /**
    * Registers the data returned by API's save method into the history stack.
    */
-  registerChange() {
+  registerChange () {
     if (!this.readOnly) {
       if (this.editor && this.editor.save && this.shouldSaveHistory) {
-        this.editor.save().then((savedData) => {
-          if (this.editorDidUpdate(savedData.blocks)) this.save(savedData.blocks);
-        });
+        this.editor.save().then(savedData => {
+          if (this.editorDidUpdate(savedData.blocks))
+            this.save(savedData.blocks)
+        })
       }
-      this.shouldSaveHistory = true;
+      this.shouldSaveHistory = true
     }
   }
 
@@ -105,57 +109,57 @@ export default class Undo {
    * @param {Object} newData  New data to be saved in the history stack.
    * @returns {Boolean}
    */
-  editorDidUpdate(newData) {
-    const { state } = this.stack[this.position];
-    if (newData.length !== state.length) return true;
+  editorDidUpdate (newData) {
+    const { state } = this.stack[this.position]
+    if (newData.length !== state.length) return true
 
-    return JSON.stringify(state) !== JSON.stringify(newData);
+    return JSON.stringify(state) !== JSON.stringify(newData)
   }
 
   /**
    * Adds the saved data in the history stack and updates current position.
    */
-  save(state) {
+  save (state) {
     if (this.position >= this.maxLength) {
-      this.truncate(this.stack, this.maxLength);
+      this.truncate(this.stack, this.maxLength)
     }
-    this.position = Math.min(this.position, this.stack.length - 1);
+    this.position = Math.min(this.position, this.stack.length - 1)
 
-    this.stack = this.stack.slice(0, this.position + 1);
+    this.stack = this.stack.slice(0, this.position + 1)
 
-    const index = this.editor.blocks.getCurrentBlockIndex();
-    this.stack.push({ index, state });
-    this.position += 1;
-    this.onUpdate();
+    const index = this.editor.blocks.getCurrentBlockIndex()
+    this.stack.push({ index, state })
+    this.position += 1
+    this.onUpdate()
   }
 
   /**
    * Decreases the current position and renders the data in the editor.
    */
-  undo() {
+  undo () {
     if (this.canUndo()) {
-      this.shouldSaveHistory = false;
-      const { index, state } = this.stack[(this.position -= 1)];
-      this.onUpdate();
+      this.shouldSaveHistory = false
+      const { index, state } = this.stack[(this.position -= 1)]
+      this.onUpdate()
 
       this.editor.blocks
         .render({ blocks: state })
-        .then(() => this.editor.caret.setToBlock(index, 'end'));
+        .then(() => this.editor.caret.setToBlock(index, 'end'))
     }
   }
 
   /**
    * Increases the current position and renders the data in the editor.
    */
-  redo() {
+  redo () {
     if (this.canRedo()) {
-      this.shouldSaveHistory = false;
-      const { index, state } = this.stack[(this.position += 1)];
-      this.onUpdate();
+      this.shouldSaveHistory = false
+      const { index, state } = this.stack[(this.position += 1)]
+      this.onUpdate()
 
       this.editor.blocks
         .render({ blocks: state })
-        .then(() => this.editor.caret.setToBlock(index, 'end'));
+        .then(() => this.editor.caret.setToBlock(index, 'end'))
     }
   }
 
@@ -164,8 +168,8 @@ export default class Undo {
    *
    * @returns {Boolean}
    */
-  canUndo() {
-    return !this.readOnly && this.position > 0;
+  canUndo () {
+    return !this.readOnly && this.position > 0
   }
 
   /**
@@ -173,8 +177,8 @@ export default class Undo {
    *
    * @returns {Boolean}
    */
-  canRedo() {
-    return !this.readOnly && this.position < this.count();
+  canRedo () {
+    return !this.readOnly && this.position < this.count()
   }
 
   /**
@@ -182,39 +186,43 @@ export default class Undo {
    *
    * @returns {Number}
    */
-  count() {
-    return this.stack.length - 1; // -1 because of initial item
+  count () {
+    return this.stack.length - 1 // -1 because of initial item
   }
 
   /**
    * Sets events listeners to allow keyboard actions support.
    */
-  setEventListeners() {
-    const { holder } = this.editor.configuration;
-    const buttonKey = /(Mac)/i.test(navigator.platform) ? 'metaKey' : 'ctrlKey';
+  setEventListeners () {
+    const holderConfig = this.editor.configuration.holder
+    const holder =
+      typeof holderConfig === 'string'
+        ? document.getElementById(holderConfig)
+        : holderConfig
 
-    const handleUndo = (e) => {
+    const buttonKey = /(Mac)/i.test(navigator.platform) ? 'metaKey' : 'ctrlKey'
+
+    const handleUndo = e => {
       if (e[buttonKey] && e.key === 'z') {
-        e.preventDefault();
-        this.undo();
+        e.preventDefault()
+        this.undo()
       }
-    };
+    }
 
-    const handleRedo = (e) => {
+    const handleRedo = e => {
       if (e[buttonKey] && e.key === 'y') {
-        e.preventDefault();
-        this.redo();
+        e.preventDefault()
+        this.redo()
       }
-    };
+    }
 
     const handleDestroy = () => {
-      holder.removeEventListener('keydown', handleUndo);
-      holder.removeEventListener('keydown', handleRedo);
-    };
+      holder.removeEventListener('keydown', handleUndo)
+      holder.removeEventListener('keydown', handleRedo)
+    }
 
-    holder.addEventListener('keydown', handleUndo);
-    holder.addEventListener('keydown', handleRedo);
-    holder.addEventListener('destroy', handleDestroy);
+    holder.addEventListener('keydown', handleUndo)
+    holder.addEventListener('keydown', handleRedo)
+    holder.addEventListener('destroy', handleDestroy)
   }
-
 }
