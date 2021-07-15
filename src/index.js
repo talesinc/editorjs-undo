@@ -195,12 +195,10 @@ export default class Undo {
    */
   setEventListeners () {
     const holderConfig = this.editor.configuration.holder
-    console.log(holderConfig)
     const holder =
       typeof holderConfig === 'string'
         ? document.getElementById(holderConfig)
         : holderConfig
-    console.log(holder)
 
     const buttonKey = /(Mac)/i.test(navigator.platform) ? 'metaKey' : 'ctrlKey'
 
